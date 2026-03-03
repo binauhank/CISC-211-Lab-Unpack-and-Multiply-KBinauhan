@@ -12,7 +12,7 @@
 .type nameStr,%gnu_unique_object
     
 /*** STUDENTS: Change the next line to your name!  **/
-nameStr: .asciz "Inigo Montoya"  
+nameStr: .asciz "Kristian Binauhan"  
 
 .align   /* realign so that next mem allocations are on word boundaries */
  
@@ -80,7 +80,89 @@ asmMult:
 .endif
     
     /*** STUDENTS: Place your code BELOW this line!!! **************/
+    /* Store value of R0 into packed_Value */
+    LDR R1, =packed_Value
+    STR R0, [R1]
     
+    /* A */
+    MOV R2, R0 /* Copies value of R0 to R2 */
+    ASR R2, R2, 16 /* Shifts upper 16 bits to lower 16 bits, sign extension */
+    
+    LDR R1, =a_Multiplicand
+    STR R2, [R1] /* Stores value of R2 into a_Multiplicand */
+    
+    LSR R4, R2, 31 /* Isolates MSB to get either 0 or 1 */
+    LDR R1, =a_Sign
+    STR R4, [R1]
+    
+    CMP R2, 0
+    NEGMI R2, R2 /* Checks if value is negative, then finds absolute value */
+    LDR R1, =a_Abs
+    STR R2, [R1]
+    
+    /* B */
+    MOV R3, R0 /* Copies value of R0 to R3 */
+    LSL R3, R3, 16 /* Clears the upper 16 bits */
+    ASR R3, R3, 16 /* Shifts it back into the lower 16 bits, sign extension*/
+    
+    LDR R1, =b_Multiplier
+    STR R3, [R1] /* Stores value of R3 into b_Multiplier */
+    
+    LSR R5, R3, 31 /* Isolates MSB to get either 0 or 1 */
+    LDR R1, =b_Sign
+    STR R5, [R1]
+    
+    CMP R3, 0
+    NEGMI R3, R3 /* Checks if value is negative, then finds absolute value */
+    LDR R1, =a_Abs
+    STR R3, [R1]
+    
+    /* Find prod_Is_Neg through multiplication (successive addition method) */
+    MOV R6, 0 /* set product to 0 */
+    CMP R5, 0
+    ADDEQ R6, R6, R4 /* if multiplier (b_Sign) = 0, product = product + multiplicand (a_Sign) */
+    LDR R1, =prod_Is_Neg
+    STR R6, [R1]
+    
+    /* Shift-and-Add Multiplication */
+    MOV R0, R2 /* multiplicand - copy value of a_Abs to R0 */
+    MOV R1, R3 /* multiplier - copy value of b_Abs to R1 */
+    MOV R7, 0 /* set product to 0 (will use R6 later) */
+    
+    B loop
+    
+loop:
+    CMP R1, 0
+    BEQ multiplier_is_zero
+    
+    AND R3, R1, 1 /* isolate LSB of multiplier */
+    CMP R3, 1 /* checks if LSB is one, branches if so */
+    BEQ lsb_is_one
+    
+    B shift
+    
+lsb_is_one:
+    ADD R7, R7, R0 /* product = product + multiplicand */
+    B shift
+    
+shift:
+    LSL R0, R0, 1 /* multiplicand << 1 */
+    LSR R1, R1, 1  /* multiplier >> 1 */
+    B loop
+    
+multiplier_is_zero:
+    LDR R2, =abs_Product
+    STR R7, [R2]
+    
+    CMP R6, 1 /* check prod_Is_Neg */
+    NEGEQ R7, R7 /* converts to negative if true */
+    
+    LDR R2, =final_Product
+    STR R7, [R2]
+    
+    MOV R0, R7
+    
+    B done
     
     /*** STUDENTS: Place your code ABOVE this line!!! **************/
 
